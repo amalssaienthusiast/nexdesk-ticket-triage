@@ -25,7 +25,7 @@ from openai import OpenAI
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
-HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("API_KEY", "")
+HF_TOKEN = os.getenv("HF_TOKEN")
 ENV_BASE_URL = os.getenv("ENV_BASE_URL", "http://localhost:7860").rstrip("/")
 
 BENCHMARK = "nexdesk-ticket-triage"
@@ -39,6 +39,7 @@ TASKS = ["ticket_classify", "ticket_route", "ticket_resolve"]
 # ─────────────────────────────────────────────
 # Log helpers  (MANDATORY FORMAT — do not change)
 # ─────────────────────────────────────────────
+
 
 def log_start(task: str, env: str, model: str) -> None:
     print(f"[START] task={task} env={env} model={model}", flush=True)
@@ -60,9 +61,11 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
         flush=True,
     )
 
+
 # ─────────────────────────────────────────────
 # Env HTTP helpers
 # ─────────────────────────────────────────────
+
 
 def env_reset(task: str) -> Dict[str, Any]:
     r = requests.post(f"{ENV_BASE_URL}/reset", json={"task": task}, timeout=30)
@@ -75,6 +78,7 @@ def env_step(session_id: str, action: Dict[str, Any]) -> Dict[str, Any]:
     r = requests.post(f"{ENV_BASE_URL}/step", json=payload, timeout=30)
     r.raise_for_status()
     return r.json()
+
 
 # ─────────────────────────────────────────────
 # LLM prompts per task + step
@@ -181,9 +185,11 @@ def get_action(client: OpenAI, obs: Dict[str, Any], step: int) -> Dict[str, Any]
         # Fallback defaults
         return {"priority": "medium", "category": "other"}
 
+
 # ─────────────────────────────────────────────
 # Run one task episode
 # ─────────────────────────────────────────────
+
 
 def run_task(client: OpenAI, task: str) -> None:
     rewards: List[float] = []
@@ -243,8 +249,9 @@ def run_task(client: OpenAI, task: str) -> None:
 # Main
 # ─────────────────────────────────────────────
 
+
 def main():
-    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN or "dummy")
+    client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
     for task in TASKS:
         run_task(client, task)
