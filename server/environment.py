@@ -253,8 +253,6 @@ class NexDeskEnv:
                 "total_reward": round(sess["total_reward"], 4),
                 "task": task,
                 "score_breakdown": score_breakdown,
-                "time_penalty": round(time_penalty, 4),
-                "confidence_bonus": round(confidence_bonus, 4),
             },
         }
 
