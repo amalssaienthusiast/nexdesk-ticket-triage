@@ -218,7 +218,7 @@ curl -X POST http://localhost:7860/step \
   "task": "ticket_classify",
   "step": 0,
   "max_steps": 1,
-  "last_reward": 0.0,
+  "last_reward": 0.001,
   "session_id": "uuid-...",
   "message": "Instructions...",
   
@@ -245,7 +245,7 @@ curl -X POST http://localhost:7860/step \
   "first_response": "string (30+ chars for quality scoring)",
   "resolution_steps": ["step1", "step2", ...],
   "sla_hours": 4,
-  "confidence": 0.85,  // Optional, 0.0-1.0
+  "confidence": 0.85,  // Optional, between 0 and 1
   "reasoning": "string"  // Optional, for debugging
 }
 ```
@@ -324,7 +324,7 @@ nexdesk-ticket-triage/
 | **Real-world utility** | IT triage is a $10B+ industry pain point |
 | **Task progression** | Easy → Medium → Hard → Crisis (4 levels) |
 | **Dense rewards** | Partial credit at every step |
-| **Deterministic grading** | All graders return [0.0, 1.0] |
+| **Deterministic grading** | All graders return scores in (0.001, 0.999) |
 | **Novel mechanics** | Time pressure, confidence calibration, crisis surge |
 | **Business value** | ROI metrics, cost projections |
 
