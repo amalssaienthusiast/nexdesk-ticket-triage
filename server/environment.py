@@ -18,11 +18,11 @@ from .graders import (
     grade_resolve_step3,
 )
 
-_EPS = 0.001  # For strict (0, 1) clamping
+_EPS = 0.01  # For strict (0, 1) clamping (must survive :.2f formatting)
 
 
 def _strict_clamp(score: float) -> float:
-    """Clamp score to strictly open interval (0, 1)."""
+    """Clamp score to strictly open interval (0, 1) — survives :.2f formatting."""
     return round(max(_EPS, min(1.0 - _EPS, score)), 4)
 
 
@@ -39,7 +39,7 @@ TASK_CONFIGS = {
         "required_fields": ["priority", "category"],
         "difficulty": "easy",
         "base_sla_minutes": 60,
-        "max_reward_per_step": {1: 0.999},
+        "max_reward_per_step": {1: 0.99},
     },
     "ticket_route": {
         "max_steps": 2,
@@ -136,7 +136,7 @@ class NexDeskEnv:
 
         current_ticket = tickets[0]
         queue_depth = random.randint(5, 25)
-        stress_level = min(queue_depth / 30.0, 0.999)
+        stress_level = min(queue_depth / 30.0, 0.99)
 
         # Adjust SLA based on priority
         base_sla = cfg.get("base_sla_minutes", 60)
@@ -226,7 +226,7 @@ class NexDeskEnv:
                 sess["queue_depth"] = max(0, sess["queue_depth"] - 1)
                 if random.random() < 0.3:
                     sess["queue_depth"] += 1
-                    sess["stress_level"] = min(0.999, sess["stress_level"] + 0.05)
+                    sess["stress_level"] = min(0.99, sess["stress_level"] + 0.05)
             sess["tickets_resolved"] += 1
 
         done = step >= sess["max_steps"]

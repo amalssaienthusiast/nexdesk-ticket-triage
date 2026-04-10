@@ -38,7 +38,7 @@ class NexDeskAction(BaseModel):
 
     # Innovation: Confidence calibration
     confidence: Optional[float] = Field(
-        None, ge=0.001, le=0.999, description="Agent's confidence in this action (0.001-0.999)"
+        None, ge=0.01, le=0.99, description="Agent's confidence in this action (0.01-0.99)"
     )
 
     # Innovation: Action type for multi-agent scenarios

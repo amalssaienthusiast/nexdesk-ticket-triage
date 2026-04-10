@@ -6,7 +6,7 @@ All graders are deterministic given the same input.
 
 from typing import Any, Dict
 
-_EPS = 0.001  # minimum non-zero score / distance from 1.0
+_EPS = 0.01  # minimum non-zero score / distance from 1.0 (must survive :.2f formatting)
 
 
 def _strict(score: float) -> float:

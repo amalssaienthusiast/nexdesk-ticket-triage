@@ -186,12 +186,11 @@ def get_action(client: OpenAI, obs: Dict[str, Any], step: int) -> Dict[str, Any]
             max_tokens=MAX_TOKENS,
         )
         raw = (completion.choices[0].message.content or "{}").strip()
-        # Strip markdown fences if any
-        if raw.startswith("```"):
-            raw = raw.split("```")[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
-        return json.loads(raw.strip())
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start != -1 and end != -1:
+            raw = raw[start:end+1]
+        return json.loads(raw)
     except Exception as e:
         # Fallback defaults
         return {"priority": "medium", "category": "other"}
@@ -229,7 +228,7 @@ def run_task(client: OpenAI, task: str) -> None:
                 done = bool(result["done"])
                 error_msg = None
             except Exception as e:
-                reward = 0.001  # Never exactly 0.0
+                reward = 0.01  # Never exactly 0.0
                 done = True
                 error_msg = str(e)[:100]
 
@@ -240,14 +239,13 @@ def run_task(client: OpenAI, task: str) -> None:
             if done:
                 break
 
-        score = sum(rewards) / max(len(rewards), 1)
-        score = round(max(0.001, min(0.999, score)), 4)  # strictly (0, 1)
+        score = sum(rewards)
         success = score >= SUCCESS_THRESHOLD
 
     except Exception as e:
         error_msg = str(e)[:100]
         if not rewards:
-            rewards = [0.001]
+            rewards = [0.01]
         steps_taken = steps_taken or 1
         success = False
 
