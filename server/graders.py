@@ -4,12 +4,12 @@
 
 from typing import Any, Dict, Optional, List
 
-_EPS = 0.001
+_EPS = 0.01
 
 
 def _strict(score: float) -> float:
     # strictly clamp to avoid 0.0 or 1.0 validator crashes
-    return float(round(max(_EPS, min(0.99, float(score))), 4))
+    return float(round(max(_EPS, min(0.99, float(score))), 2))
 
 
 # helpers

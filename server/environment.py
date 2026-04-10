@@ -24,12 +24,12 @@ from .metrics import BusinessMetrics
 
 logger = logging.getLogger(__name__)
 
-_EPS = 0.001
+_EPS = 0.01
 
 
 def _strict_clamp(score: float) -> float:
     # strict bounding so the evaluator doesn't crash on us
-    return float(round(max(_EPS, min(0.99, float(score))), 4))
+    return float(round(max(_EPS, min(0.99, float(score))), 2))
 
 
 # basically the difficulty settings for the different tasks
