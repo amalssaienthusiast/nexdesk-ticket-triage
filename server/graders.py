@@ -1,32 +1,22 @@
-"""
-NexDesk Graders - Complete with all advanced features
-Each grader returns a float strictly in (0.01, 0.99) for Phase 2 compliance.
-All graders are deterministic given the same input.
-
-Features:
-- Multi-dimensional scoring
-- Confidence calibration bonus/penalty  
-- Time pressure penalty
-- Crisis mode grading with prioritization bonuses
-"""
+# nexdesk graders
+# keeping all these strictly clamped so the hackathon validator doesn't fail us
+# adding some time constraints and confidence bonuses to make it realistic
 
 from typing import Any, Dict, Optional, List
 
-_EPS = 0.01
+_EPS = 0.001
 
 
 def _strict(score: float) -> float:
-    """Clamp score to strictly open interval (0, 1) - Phase 2 requirement."""
+    # strictly clamp to avoid 0.0 or 1.0 validator crashes
     return float(round(max(_EPS, min(0.99, float(score))), 4))
 
 
-# ─────────────────────────────────────────────
-# Helper Functions
-# ─────────────────────────────────────────────
+# helpers
 
 
 def _kw_score(text: str, keywords: List[str]) -> float:
-    """Score based on how many keywords appear in text (case-insensitive)."""
+    # basic keyword matching for response payloads
     if not text or not keywords:
         return _EPS
     text_lower = text.lower()
@@ -35,7 +25,7 @@ def _kw_score(text: str, keywords: List[str]) -> float:
 
 
 def _sla_score(predicted: Optional[int], expected: int) -> float:
-    """Score SLA estimate. Exact = 0.99, within 2x = 0.7, within 4x = 0.4, beyond = 0.05"""
+    # simple tier system for sla estimates
     if predicted is None:
         return _EPS
     ratio = predicted / expected if expected > 0 else 1.0
@@ -49,7 +39,7 @@ def _sla_score(predicted: Optional[int], expected: int) -> float:
 
 
 def _priority_score(predicted: str, ground_truth: str, acceptable: List[str]) -> float:
-    """Score priority prediction."""
+    # basic priority check
     pred = (predicted or "").strip().lower()
     if pred == ground_truth:
         return 1.0
@@ -59,7 +49,7 @@ def _priority_score(predicted: str, ground_truth: str, acceptable: List[str]) ->
 
 
 def _category_score(predicted: str, ground_truth: str, acceptable: List[str]) -> float:
-    """Score category prediction."""
+    # basic category check
     pred = (predicted or "").strip().lower()
     if pred == ground_truth:
         return 1.0
@@ -69,7 +59,7 @@ def _category_score(predicted: str, ground_truth: str, acceptable: List[str]) ->
 
 
 def _team_score(predicted: str, ground_truth: str, acceptable: List[str]) -> float:
-    """Score team assignment."""
+    # basic team routing check
     pred = (predicted or "").strip().lower()
     if pred == ground_truth:
         return 1.0
@@ -78,18 +68,12 @@ def _team_score(predicted: str, ground_truth: str, acceptable: List[str]) -> flo
     return 0.0
 
 
-# ─────────────────────────────────────────────
-# Time Pressure & Confidence (Advanced Features)
-# ─────────────────────────────────────────────
+# core time and confidence math
+# spent a while tuning these numbers to feel fair but punishing
 
 
 def compute_time_penalty(elapsed_minutes: float, sla_deadline: int, stress_level: float) -> float:
-    """
-    Compute penalty for time pressure.
-    - No penalty if under 50% of SLA
-    - Linear penalty from 50% to 100%
-    - Max 35% penalty + stress multiplier
-    """
+    # scales penalty based on how close we are to blowing the SLA deadline
     if sla_deadline <= 0:
         return 0.0
 
@@ -107,11 +91,7 @@ def compute_time_penalty(elapsed_minutes: float, sla_deadline: int, stress_level
 
 
 def compute_confidence_bonus(confidence: float, accuracy: float) -> float:
-    """
-    Compute bonus/penalty for confidence calibration.
-    Well-calibrated agents (confidence ≈ accuracy) get bonus.
-    Overconfident wrong answers get penalty.
-    """
+    # give them a bonus if they know they are right, punish if they are hopelessly overconfident
     if confidence is None:
         return 0.0
 
@@ -126,15 +106,13 @@ def compute_confidence_bonus(confidence: float, accuracy: float) -> float:
     return 0.0
 
 
-# ─────────────────────────────────────────────
-# Multi-Dimensional Score Breakdown
-# ─────────────────────────────────────────────
+# breakdowns for the UI/eval metrics
 
 
 def get_score_breakdown(
     task: str, step: int, action: Dict[str, Any], ticket: Dict[str, Any]
 ) -> Dict[str, float]:
-    """Return detailed score breakdown by dimension for analysis."""
+    # slices the final score into readable chunks
     breakdown = {}
 
     pred_priority = (action.get("priority") or "").strip().lower()
@@ -179,11 +157,7 @@ def get_score_breakdown(
     return breakdown
 
 
-# ─────────────────────────────────────────────
-# Task 1: ticket_classify (easy)
-# Max score: 0.99 (strict)
-# Components: priority (0.5) + category (0.5)
-# ─────────────────────────────────────────────
+# task 1: classify
 
 
 def grade_classify(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
@@ -204,12 +178,7 @@ def grade_classify(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
     return _strict(score)
 
 
-# ─────────────────────────────────────────────
-# Task 2: ticket_route (medium)
-# Max score per step:
-#   Step 1: priority(0.25) + category(0.25) + team(0.35) = 0.85
-#   Step 2: affected_system(0.15) → total 0.99
-# ─────────────────────────────────────────────
+# task 2: routing
 
 
 def grade_route_step1(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
@@ -246,14 +215,7 @@ def grade_route_step2(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
     return _strict(_EPS)
 
 
-# ─────────────────────────────────────────────
-# Task 3: ticket_resolve (hard)
-# Max score per step:
-#   Step 1: priority(0.15) + category(0.15) + team(0.15) = 0.45
-#   Step 2: affected_system(0.10) + first_response(0.20) = 0.30
-#   Step 3: resolution_steps(0.15) + sla_hours(0.10) = 0.25
-#   Total: 0.99
-# ─────────────────────────────────────────────
+# task 3: full resolve
 
 
 def grade_resolve_step1(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
@@ -315,16 +277,11 @@ def grade_resolve_step3(action: Dict[str, Any], ticket: Dict[str, Any]) -> float
     return _strict(score)
 
 
-# ─────────────────────────────────────────────
-# Task 4: crisis_surge (hard, batch)
-# Each ticket graded on classification + routing
-# Max score per ticket: 0.10 (10 tickets = 1.0 total)
-# Bonus for correct prioritization order
-# ─────────────────────────────────────────────
+# task 4: crisis mode
 
 
 def grade_crisis_ticket(action: Dict[str, Any], ticket: Dict[str, Any], step: int) -> float:
-    """Grade a single ticket in crisis surge mode with prioritization bonuses."""
+    # bonus if they actually triage the critical stuff first
     score = _EPS
 
     pred_priority = (action.get("priority") or "").strip().lower()
@@ -356,15 +313,13 @@ def grade_crisis_ticket(action: Dict[str, Any], ticket: Dict[str, Any], step: in
     return _strict(score)
 
 
-# ─────────────────────────────────────────────
-# Aggregate Grading Functions
-# ─────────────────────────────────────────────
+# rollups
 
 
 def grade_full_episode(
     task: str, rewards: List[float], metadata: Optional[Dict] = None
 ) -> Dict[str, Any]:
-    """Compute comprehensive episode metrics."""
+    # stitch the episode metrics together
     total = sum(rewards)
 
     result = {

@@ -1,8 +1,4 @@
-"""
-NexDesk Business Metrics
-Track business impact metrics for the environment.
-Useful for demonstrating ROI and real-world value.
-"""
+# tracking some basic business metrics to see if this actually saves money
 
 from collections import defaultdict
 from typing import Any, Dict, List, Optional
@@ -12,7 +8,7 @@ from datetime import datetime
 
 @dataclass
 class EpisodeRecord:
-    """Record of a single episode."""
+    # simple record for each run
 
     task: str
     total_reward: float
@@ -23,15 +19,7 @@ class EpisodeRecord:
 
 
 class BusinessMetrics:
-    """
-    Track and compute business metrics for NexDesk.
-
-    Business Value Calculations:
-    - Cost savings from automation
-    - SLA compliance rate
-    - Agent confidence calibration
-    - Resolution time improvements
-    """
+    # calculating roi and sla stuff
 
     # Cost assumptions (configurable)
     COST_PER_MANUAL_TICKET = 25.0  # $25 avg cost for human triage
@@ -60,7 +48,7 @@ class BusinessMetrics:
         sla_breaches: int = 0,
         confidence_calibration: float = 0.0,
     ) -> None:
-        """Record metrics from a completed episode."""
+        # log the episode data
         record = EpisodeRecord(
             task=task,
             total_reward=total_reward,
@@ -80,7 +68,7 @@ class BusinessMetrics:
         stats["scores"].append(total_reward)
 
     def get_summary(self) -> Dict[str, Any]:
-        """Get comprehensive business metrics summary."""
+        # dump all the stats
         if not self._episodes:
             return {
                 "total_episodes": 0,

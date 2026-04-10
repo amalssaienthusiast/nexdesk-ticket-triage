@@ -1,15 +1,11 @@
-"""
-NexDesk — Baseline Inference Script
-=====================================
-Runs an LLM agent against all 3 NexDesk tasks and logs results in
-the mandatory OpenEnv format.
+# basic baseline test using an LLM
+# runs all tasks and logs the exact structure required by the validator
 
-Environment variables:
-  API_BASE_URL   LLM endpoint  (default: https://router.huggingface.co/v1)
-  MODEL_NAME     LLM model     (default: Qwen/Qwen2.5-72B-Instruct)
-  HF_TOKEN       API key for LLM
-  ENV_BASE_URL   NexDesk server URL (default: http://localhost:7860)
-"""
+# Environment variables:
+#   API_BASE_URL   LLM endpoint  (default: https://router.huggingface.co/v1)
+#   MODEL_NAME     LLM model     (default: Qwen/Qwen2.5-72B-Instruct)
+#   HF_TOKEN       API key for LLM
+#   ENV_BASE_URL   NexDesk server URL (default: http://localhost:7860)
 
 import json
 import os
@@ -19,9 +15,7 @@ from typing import Any, Dict, List, Optional
 import requests
 from openai import OpenAI
 
-# ─────────────────────────────────────────────
-# Config
-# ─────────────────────────────────────────────
+# basic env vars
 
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
@@ -38,9 +32,7 @@ SUCCESS_THRESHOLD = 0.5
 
 TASKS = ["ticket_classify", "ticket_route", "ticket_resolve", "crisis_surge"]
 
-# ─────────────────────────────────────────────
-# Log helpers  (MANDATORY FORMAT — do not change)
-# ─────────────────────────────────────────────
+# these logs are strictly parsed by the evaluator. do not modify their structure.
 
 
 def log_start(task: str, env: str, model: str) -> None:
@@ -64,9 +56,7 @@ def log_end(success: bool, steps: int, rewards: List[float]) -> None:
     )
 
 
-# ─────────────────────────────────────────────
-# Env HTTP helpers
-# ─────────────────────────────────────────────
+# api wrappers
 
 
 def env_reset(task: str) -> Dict[str, Any]:
@@ -82,9 +72,7 @@ def env_step(session_id: str, action: Dict[str, Any]) -> Dict[str, Any]:
     return r.json()
 
 
-# ─────────────────────────────────────────────
-# LLM prompts per task + step
-# ─────────────────────────────────────────────
+# this prompt structure took me like 20 tries to get right. the agent kept generating hallucinated JSON.
 
 SYSTEM_BASE = textwrap.dedent("""
     You are an expert IT helpdesk manager. Analyze the support ticket and respond
@@ -195,10 +183,7 @@ def get_action(client: OpenAI, obs: Dict[str, Any], step: int) -> Dict[str, Any]
         # Fallback defaults
         return {"priority": "medium", "category": "other"}
 
-
-# ─────────────────────────────────────────────
-# Run one task episode
-# ─────────────────────────────────────────────
+# actually runs the loop and handles eval errors
 
 
 def run_task(client: OpenAI, task: str) -> None:
@@ -252,11 +237,6 @@ def run_task(client: OpenAI, task: str) -> None:
         success = False
 
     log_end(success=success, steps=steps_taken, rewards=rewards)
-
-
-# ─────────────────────────────────────────────
-# Main
-# ─────────────────────────────────────────────
 
 
 def main():

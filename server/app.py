@@ -1,7 +1,4 @@
-"""
-NexDesk FastAPI Server
-Endpoints: /health, /reset, /step, /state, /tasks, /metrics
-"""
+# simple fastapi wrapper for the environment
 
 import logging
 import traceback
@@ -31,7 +28,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 env = NexDeskEnv()
 
 
-# Exception handlers
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     logger.warning(f"Validation error: {exc.errors()}")
@@ -63,10 +60,9 @@ async def generic_exception_handler(request: Request, exc: Exception):
     )
 
 
-# Request models
+# request shapes
 class ResetRequest(BaseModel):
     task: Optional[str] = Field(
-        "ticket_classify",
         description="Task: ticket_classify, ticket_route, ticket_resolve, crisis_surge",
     )
 
@@ -91,7 +87,6 @@ class StepRequest(BaseModel):
     reasoning: Optional[str] = Field(None, description="Optional reasoning")
 
 
-# Endpoints
 @app.get("/health")
 def health() -> Dict[str, Any]:
     return {
@@ -101,7 +96,7 @@ def health() -> Dict[str, Any]:
         "features": [
             "time_pressure",
             "confidence_calibration",
-            "crisis_surge_mode",
+            "crisis_surge",
             "multi_dimensional_scoring",
             "business_metrics",
         ],

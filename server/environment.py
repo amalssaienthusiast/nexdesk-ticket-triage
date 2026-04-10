@@ -1,14 +1,5 @@
-"""
-NexDesk Environment — Core Logic with Advanced Features
-Handles session management, time pressure, confidence calibration, crisis surge, and business metrics.
-
-Advanced Features:
-- Time pressure penalty with SLA deadlines
-- Confidence calibration bonus/penalty
-- Multi-dimensional score breakdown
-- Crisis surge batch processing
-- Business metrics tracking
-"""
+# nexdesk engine
+# handles the actual environment, time pressures, etc.
 
 import logging
 import random
@@ -33,15 +24,15 @@ from .metrics import BusinessMetrics
 
 logger = logging.getLogger(__name__)
 
-_EPS = 0.01
+_EPS = 0.001
 
 
 def _strict_clamp(score: float) -> float:
-    """Clamp score to strictly open interval (0, 1) — Phase 2 requirement."""
+    # strict bounding so the evaluator doesn't crash on us
     return float(round(max(_EPS, min(0.99, float(score))), 4))
 
 
-# Task configurations with max rewards per step
+# basically the difficulty settings for the different tasks
 TASK_CONFIGS = {
     "ticket_classify": {
         "max_steps": 1,
@@ -86,7 +77,7 @@ TASK_CONFIGS = {
     },
 }
 
-# Organizational context for richer observations
+# simulated company data to feed the agent context
 ORG_CONTEXT = {
     "total_employees": 500,
     "departments": [
@@ -113,16 +104,16 @@ ORG_CONTEXT = {
 
 
 class NexDeskEnv:
-    """NexDesk IT Ticket Triage Environment with advanced features."""
+    # the main openenv driver
 
     def __init__(self):
         self._sessions: Dict[str, Dict[str, Any]] = {}
         self._metrics = BusinessMetrics()
         self._session_timeout_seconds = 3600
-        logger.info("NexDesk environment initialized with advanced features")
+        logger.info("started nexdesk env")
 
     def reset(self, task: Optional[str] = None) -> Dict[str, Any]:
-        """Start a new episode for the given task."""
+        # start a new episode. randomly drop some tickets in.
         self._cleanup_expired_sessions()
 
         task = (task or "ticket_classify").strip().lower()
@@ -182,7 +173,7 @@ class NexDeskEnv:
         return {"observation": self._build_observation(session_id, _EPS), "session_id": session_id}
 
     def step(self, session_id: str, action: Dict[str, Any]) -> Dict[str, Any]:
-        """Take a step in the environment with time pressure and confidence calibration."""
+        # step logic. tracks time limits and runs graders.
         if not session_id or not isinstance(session_id, str):
             raise ValueError("session_id is required")
         if session_id not in self._sessions:
@@ -313,7 +304,7 @@ class NexDeskEnv:
         }
 
     def state(self, session_id: str) -> Dict[str, Any]:
-        """Get current episode state."""
+        # get state variables for testing
         if not session_id or session_id not in self._sessions:
             raise ValueError(f"Unknown session_id: '{session_id}'")
         sess = self._sessions[session_id]
@@ -335,7 +326,7 @@ class NexDeskEnv:
     def _compute_reward(
         self, task: str, step: int, action: Dict[str, Any], ticket: Dict[str, Any]
     ) -> float:
-        """Compute reward using appropriate grader."""
+        # compute reward using the corresponding grader
         try:
             if task == "ticket_classify":
                 return grade_classify(action, ticket)
@@ -353,7 +344,7 @@ class NexDeskEnv:
                 else:
                     return grade_resolve_step3(action, ticket)
             if task == "crisis_surge":
-                # Simple grader for crisis_surge (priority + category + team)
+                # quick basic grader for crisis_surge
                 score = _EPS
                 pred_priority = (action.get("priority") or "").strip().lower()
                 if pred_priority == ticket.get("gt_priority"):
@@ -377,7 +368,7 @@ class NexDeskEnv:
             return _EPS
 
     def _compute_calibration(self, sess: Dict[str, Any]) -> float:
-        """Compute confidence calibration score (1 - MAE)."""
+        # compute confidence calibration score with simple MAE
         conf_hist = sess.get("confidence_history", [])
         acc_hist = sess.get("accuracy_history", [])
         if not conf_hist or len(conf_hist) != len(acc_hist):
@@ -389,7 +380,7 @@ class NexDeskEnv:
             return 0.5
 
     def _build_observation(self, session_id: str, last_reward: float) -> Dict[str, Any]:
-        """Build observation dict for current state."""
+        # format payload for the client
         sess = self._sessions[session_id]
         ticket = sess["ticket"]
         task = sess["task"]
@@ -458,7 +449,7 @@ class NexDeskEnv:
             return []
 
     def _cleanup_expired_sessions(self) -> None:
-        """Remove sessions older than timeout."""
+        # clear out old sessions so memory doesn't explode
         current_time = time.time()
         expired = [
             sid

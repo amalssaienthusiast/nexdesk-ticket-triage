@@ -1,13 +1,10 @@
 name: nexdesk-ticket-triage
 version: "1.1.0"
 description: >
-  NexDesk IT Ticket Triage — an OpenEnv environment for training and evaluating
-  AI agents on real-world IT helpdesk tasks. Features time pressure, SLA dynamics,
-  confidence calibration, crisis surge mode, and multi-dimensional scoring.
+  NexDesk IT Ticket Triage.
   
-  Agents must classify, route, and resolve IT support tickets with increasing
-  complexity across four tasks, including a novel crisis surge scenario that
-  tests batch ticket handling under pressure.
+  A basic environment for training AI agents on helpdesk tasks. I added SLA dynamics,
+  batch ticket surges, and some confidence calibration to make it harder.
 author: "OpenEnv Contributor"
 tags:
   - openenv
@@ -53,10 +50,8 @@ tasks:
 
   - id: crisis_surge
     description: >
-      CRISIS MODE: Handle a 10-ticket surge during a simulated production outage.
-      Each step processes one ticket. Agent must prioritize critical tickets,
-      triage efficiently, and maintain accuracy under time pressure.
-      Unique feature: batch ticket handling with dynamic stress levels.
+      a batch of 10 tickets simulating a production outage.
+      The agent needs to prioritize the critical stuff first instead of just reading them in order.
     difficulty: hard
     max_steps: 10
     reward_range: [0.01, 0.99]
