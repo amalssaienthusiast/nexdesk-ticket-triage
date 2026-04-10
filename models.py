@@ -27,31 +27,25 @@ class NexDeskAction(BaseModel):
         None,
         description="Assigned team: helpdesk, network-ops, sysadmin, security, dev",
     )
-    affected_system: Optional[str] = Field(
-        None, description="Primary system affected by the issue"
-    )
+    affected_system: Optional[str] = Field(None, description="Primary system affected by the issue")
 
     # Resolution fields
     first_response: Optional[str] = Field(
         None, description="Professional first response to the user"
     )
-    resolution_steps: Optional[List[str]] = Field(
-        None, description="List of resolution steps"
-    )
+    resolution_steps: Optional[List[str]] = Field(None, description="List of resolution steps")
     sla_hours: Optional[int] = Field(None, description="Estimated hours to resolve")
 
     # Innovation: Confidence calibration
     confidence: Optional[float] = Field(
-        None, ge=0.0, le=1.0, description="Agent's confidence in this action (0.0-1.0)"
+        None, ge=0.001, le=0.999, description="Agent's confidence in this action (0.001-0.999)"
     )
 
     # Innovation: Action type for multi-agent scenarios
     action_type: Optional[str] = Field(
         None, description="Action type: classify, respond, resolve, delegate, escalate"
     )
-    reasoning: Optional[str] = Field(
-        None, description="Optional reasoning for the action"
-    )
+    reasoning: Optional[str] = Field(None, description="Optional reasoning for the action")
 
 
 class NexDeskObservation(BaseModel):
@@ -77,9 +71,7 @@ class NexDeskObservation(BaseModel):
     sla_deadline_minutes: Optional[int] = Field(
         None, description="Minutes remaining until SLA breach"
     )
-    queue_depth: Optional[int] = Field(
-        None, description="Number of pending tickets in queue"
-    )
+    queue_depth: Optional[int] = Field(None, description="Number of pending tickets in queue")
     stress_level: Optional[float] = Field(
         None, description="Current stress level 0.0-1.0 based on load"
     )
@@ -110,9 +102,7 @@ class NexDeskState(BaseModel):
     confidence_history: Optional[List[float]] = Field(
         None, description="History of confidence scores for calibration"
     )
-    accuracy_history: Optional[List[float]] = Field(
-        None, description="History of accuracy scores"
-    )
+    accuracy_history: Optional[List[float]] = Field(None, description="History of accuracy scores")
 
 
 class NexDeskInfo(BaseModel):
@@ -123,12 +113,8 @@ class NexDeskInfo(BaseModel):
     task: str
 
     # Innovation: Multi-dimensional scores
-    score_breakdown: Optional[dict] = Field(
-        None, description="Breakdown of scores by dimension"
-    )
-    time_penalty: Optional[float] = Field(
-        None, description="Penalty applied due to time pressure"
-    )
+    score_breakdown: Optional[dict] = Field(None, description="Breakdown of scores by dimension")
+    time_penalty: Optional[float] = Field(None, description="Penalty applied due to time pressure")
     confidence_bonus: Optional[float] = Field(
         None, description="Bonus/penalty for confidence calibration"
     )

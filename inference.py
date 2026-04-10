@@ -36,7 +36,7 @@ TEMPERATURE = 0.2
 MAX_TOKENS = 512
 SUCCESS_THRESHOLD = 0.5
 
-TASKS = ["ticket_classify", "ticket_route", "ticket_resolve"]
+TASKS = ["ticket_classify", "ticket_route", "ticket_resolve", "crisis_surge"]
 
 # ─────────────────────────────────────────────
 # Log helpers  (MANDATORY FORMAT — do not change)
@@ -51,13 +51,13 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
     error_val = error if error else "null"
     done_val = str(done).lower()
     print(
-        f"[STEP] step={step} action={action} reward={reward:.2f} done={done_val} error={error_val}",
+        f"[STEP] step={step} action={action} reward={reward:.4f} done={done_val} error={error_val}",
         flush=True,
     )
 
 
 def log_end(success: bool, steps: int, rewards: List[float]) -> None:
-    rewards_str = ",".join(f"{r:.2f}" for r in rewards)
+    rewards_str = ",".join(f"{r:.4f}" for r in rewards)
     print(
         f"[END] success={str(success).lower()} steps={steps} rewards={rewards_str}",
         flush=True,
@@ -157,6 +157,16 @@ def build_prompt(obs: Dict[str, Any], step: int) -> str:
                   "sla_hours": <estimated hours to resolve as integer>
                 }
             """).strip()
+    elif task == "crisis_surge":
+        instructions = textwrap.dedent("""
+            CRISIS MODE: You are handling a surge of tickets during a production outage.
+            Prioritize critical tickets. Return JSON with exactly these fields:
+            {
+              "priority": "<low|medium|high|critical>",
+              "category": "<network|hardware|software|access|security|other>",
+              "team": "<helpdesk|network-ops|sysadmin|security|dev>"
+            }
+        """).strip()
     else:
         instructions = '{"priority": "medium", "category": "other"}'
 
@@ -237,7 +247,7 @@ def run_task(client: OpenAI, task: str) -> None:
     except Exception as e:
         error_msg = str(e)[:100]
         if not rewards:
-            rewards = [0.00]  # Never 0.0
+            rewards = [0.001]
         steps_taken = steps_taken or 1
         success = False
 
