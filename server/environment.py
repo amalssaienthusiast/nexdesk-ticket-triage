@@ -259,10 +259,10 @@ class NexDeskEnv:
             score_breakdown = {}
 
         score_breakdown.update({
-            "time_penalty": round(time_penalty, 4),
-            "confidence_bonus": round(confidence_bonus, 4),
-            "base_reward": round(base_reward, 4),
-            "sla_penalty": round(sla_penalty, 4),
+            "time_penalty": max(_EPS, min(0.99, round(time_penalty, 4))),
+            "confidence_bonus": max(_EPS, min(0.99, round(confidence_bonus, 4))),
+            "base_reward": max(_EPS, min(0.99, round(base_reward, 4))),
+            "sla_penalty": max(_EPS, min(0.99, round(sla_penalty, 4))),
             "sla_breaches": sess["sla_breaches"],
         })
 
@@ -301,11 +301,10 @@ class NexDeskEnv:
             "done": done,
             "info": {
                 "step": step,
-                "total_reward": round(sess["total_reward"], 4),
+                "total_reward": round(max(_EPS, min(0.99, sess["total_reward"])), 4),
                 "task": task,
                 "score_breakdown": score_breakdown,
-                "time_penalty": round(time_penalty, 4),
-                "confidence_bonus": round(confidence_bonus, 4),
+                "confidence_bonus": max(_EPS, min(0.99, round(confidence_bonus, 4))),
             },
         }
 
