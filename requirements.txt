@@ -9,3 +9,6 @@ openai>=1.0.0
 
 # Build
 setuptools>=61.0
+
+pyyaml>=6.0
+openenv-core>=0.2.0

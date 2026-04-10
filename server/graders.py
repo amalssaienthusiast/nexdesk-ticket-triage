@@ -106,7 +106,7 @@ def grade_route_step2(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
         return _strict(0.15)
     if pred_system:
         return _strict(0.07)
-    return _EPS
+    return _strict(_EPS)
 
 
 # ─────────────────────────────────────────────

@@ -8,7 +8,7 @@ description: >
   Agents must classify, route, and resolve IT support tickets with increasing
   complexity across four tasks, including a novel crisis surge scenario that
   tests batch ticket handling under pressure.
-author: amalscicoder
+author: "OpenEnv Contributor"
 tags:
   - openenv
   - it-helpdesk
