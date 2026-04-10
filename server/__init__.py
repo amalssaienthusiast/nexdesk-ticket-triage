@@ -18,6 +18,9 @@ from .graders import (
     grade_resolve_step1,
     grade_resolve_step2,
     grade_resolve_step3,
+    grade_route,
+    grade_resolve,
+    grade_crisis,
 )
 from .metrics import BusinessMetrics, get_global_metrics
 from .tickets import TICKETS
@@ -33,4 +36,7 @@ __all__ = [
     "grade_resolve_step1",
     "grade_resolve_step2",
     "grade_resolve_step3",
+    "grade_route",
+    "grade_resolve",
+    "grade_crisis",
 ]
