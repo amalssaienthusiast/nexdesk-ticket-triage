@@ -1,173 +1,128 @@
 name: nexdesk-ticket-triage
-version: "1.1.0"
 description: >
-  NexDesk IT Ticket Triage.
-  
-  A basic environment for training AI agents on helpdesk tasks. I added SLA dynamics,
-  batch ticket surges, and some confidence calibration to make it harder.
-author: "OpenEnv Contributor"
+  IT helpdesk ticket triage environment. Agents classify, route, and resolve
+  support tickets under SLA time pressure, with confidence calibration,
+  knowledge base hints, and crisis surge handling.
+version: "2.0.0"
+author: NexDesk Team
 tags:
-  - openenv
   - it-helpdesk
   - ticket-triage
-  - customer-support
+  - classification
+  - routing
   - nlp
-  - time-pressure
-  - confidence-calibration
-
+  - real-world
+repository: ""
 tasks:
   - id: ticket_classify
-    description: >
-      Given an IT support ticket (subject + description), classify the priority
-      (low/medium/high/critical) and category (network/hardware/software/access/security/other).
-      Includes optional confidence field for calibration scoring.
+    description: "Classify a support ticket's priority and category"
     difficulty: easy
     max_steps: 1
-    reward_range: [0.01, 0.99]
-    sla_minutes: 60
-
+    grader: grade_classify
   - id: ticket_route
-    description: >
-      Classify the ticket AND route it to the correct team
-      (helpdesk/network-ops/sysadmin/security/dev), then identify the affected system.
-      Two-step episode with partial rewards at each step. Time pressure applies.
+    description: "Classify and route a ticket to the correct team, identify affected system"
     difficulty: medium
     max_steps: 2
-    reward_range: [0.01, 0.99]
-    sla_minutes: 30
-
+    grader: grade_route
   - id: ticket_resolve
-    description: >
-      Full ticket resolution pipeline over 3 steps:
-      (1) classify + assign team,
-      (2) identify affected system + write first response to user,
-      (3) provide resolution steps + estimate SLA in hours.
-      Time pressure increases with each step.
+    description: "Full resolution pipeline — classify, respond to user, provide resolution steps"
     difficulty: hard
     max_steps: 3
-    reward_range: [0.01, 0.99]
-    sla_minutes: 20
-
+    grader: grade_resolve
   - id: crisis_surge
-    description: >
-      a batch of 10 tickets simulating a production outage.
-      The agent needs to prioritize the critical stuff first instead of just reading them in order.
+    description: "Handle a surge of 10 tickets during a production outage under time pressure"
     difficulty: hard
     max_steps: 10
-    reward_range: [0.01, 0.99]
-    sla_minutes: 5
-    is_batch: true
-
-observation_space:
+    grader: grade_crisis
+action_schema:
   type: object
+  required:
+    - session_id
   properties:
-    # Core ticket info
-    ticket_id: {type: string}
-    subject: {type: string}
-    description: {type: string}
-    submitter: {type: string}
-    department: {type: string}
-    submitted_at: {type: string}
-    
-    # Episode state
-    task: {type: string}
-    step: {type: integer}
-    max_steps: {type: integer}
-    last_reward: {type: number}
-    session_id: {type: string}
-    message: {type: string}
-    
-    # Innovation: Time pressure fields
-    sla_deadline_minutes: {type: integer, description: "Minutes remaining until SLA breach"}
-    queue_depth: {type: integer, description: "Number of pending tickets"}
-    stress_level: {type: number, description: "Current stress level (0 to 1)"}
-    
-    # Innovation: Contextual information
-    org_context: {type: object, description: "Organizational context for richer decisions"}
-    similar_tickets: {type: array, description: "Similar historical tickets for pattern matching"}
-    
-    # Batch mode info (crisis_surge only)
-    batch_info: {type: object, description: "Batch processing info for crisis mode"}
-
-action_space:
-  type: object
-  properties:
-    session_id: {type: string, required: true}
-    
-    # Classification fields
-    priority: {type: string, enum: [low, medium, high, critical]}
-    category: {type: string, enum: [network, hardware, software, access, security, other]}
-    
-    # Routing fields
-    team: {type: string, enum: [helpdesk, network-ops, sysadmin, security, dev]}
-    affected_system: {type: string}
-    
-    # Resolution fields
-    first_response: {type: string}
-    resolution_steps: {type: array, items: {type: string}}
-    sla_hours: {type: integer}
-    
-    # Innovation: Confidence calibration
-    confidence: 
+    session_id:
+      type: string
+      description: Session ID from reset
+    priority:
+      type: string
+      enum: [low, medium, high, critical]
+      description: Ticket priority level
+    category:
+      type: string
+      enum: [network, hardware, software, access, security, other]
+      description: Ticket category
+    team:
+      type: string
+      enum: [helpdesk, network-ops, sysadmin, security, dev]
+      description: Team to route the ticket to
+    affected_system:
+      type: string
+      description: Primary system affected
+    first_response:
+      type: string
+      description: Professional first response to the user
+    resolution_steps:
+      type: array
+      items:
+        type: string
+      description: List of resolution steps
+    sla_hours:
+      type: integer
+      minimum: 0
+      maximum: 168
+      description: Estimated hours to resolve
+    confidence:
       type: number
-      min: 0
-      max: 1
-      description: "Agent's confidence in this action. Well-calibrated confidence earns bonus."
-    
-    # Innovation: Action types for advanced scenarios
+      minimum: 0.0
+      maximum: 1.0
+      description: Agent confidence in this action
     action_type:
       type: string
       enum: [classify, respond, resolve, delegate, escalate]
-      description: "Optional action type for multi-agent scenarios"
-    
+      description: Type of action being taken
     reasoning:
       type: string
-      description: "Optional reasoning for the action"
-
-server:
-  port: 7860
-  health_endpoint: /health
-  reset_endpoint: /reset
-  step_endpoint: /step
-  state_endpoint: /state
-  metrics_endpoint: /metrics
-
-innovations:
-  time_pressure:
-    description: >
-      Real IT helpdesks have SLA clocks ticking. This environment simulates
-      time pressure with configurable SLA deadlines per task and ticket priority.
-      Rewards decrease as SLA deadline approaches.
-    
-  confidence_calibration:
-    description: >
-      Agents can optionally provide confidence scores (between 0 and 1) with each action.
-      Well-calibrated agents (confidence ≈ accuracy) earn bonus rewards.
-      Overconfident wrong answers incur penalty.
-    
-  crisis_surge_mode:
-    description: >
-      Novel task type: Handle 10 tickets flooding in during a simulated production
-      outage. Tests prioritization, batch processing efficiency, and accuracy
-      under stress. Unique to this environment.
-    
-  multi_dimensional_scoring:
-    description: >
-      Beyond single scores, the environment provides detailed breakdowns by
-      dimension (priority, category, team, response quality, etc.) for analysis.
-    
-  business_metrics:
-    description: >
-      Track real-world business impact: cost savings, SLA compliance rate,
-      automation success rate, and ROI projections. Demonstrates practical value.
-
-baselines:
-  model: "Qwen/Qwen2.5-72B-Instruct"
-  results:
-    ticket_classify: 0.85
-    ticket_route: 0.78
-    ticket_resolve: 0.65
-    crisis_surge: 0.60
-  notes: >
-    Baseline tested with temperature=0.2, no confidence calibration.
-    Crisis surge is intentionally challenging.
+      description: Agent's reasoning for this action
+observation_schema:
+  type: object
+  properties:
+    ticket_id:
+      type: string
+    subject:
+      type: string
+    description:
+      type: string
+    submitter:
+      type: string
+    department:
+      type: string
+    submitted_at:
+      type: string
+    task:
+      type: string
+    step:
+      type: integer
+    max_steps:
+      type: integer
+    last_reward:
+      type: number
+    session_id:
+      type: string
+    message:
+      type: string
+    sla_deadline_minutes:
+      type: integer
+    queue_depth:
+      type: integer
+    stress_level:
+      type: number
+    org_context:
+      type: object
+    similar_tickets:
+      type: array
+    knowledge_hints:
+      type: object
+    batch_info:
+      type: object
+reward_range:
+  min: 0.0
+  max: 1.0
