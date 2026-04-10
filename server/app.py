@@ -63,6 +63,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
 # request shapes
 class ResetRequest(BaseModel):
     task: Optional[str] = Field(
+        default="ticket_classify",
         description="Task: ticket_classify, ticket_route, ticket_resolve, crisis_surge",
     )
 
