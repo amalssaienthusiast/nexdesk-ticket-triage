@@ -198,9 +198,9 @@ def grade_route_step1(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
 
     pred_team = (action.get("team") or "").strip().lower()
     if pred_team == ticket.get("gt_team", ""):
-        score += 0.35
+        score += 0.30
     elif pred_team in ticket.get("gt_team_ok", []):
-        score += 0.17
+        score += 0.15
 
     return _strict(score)
 
@@ -223,15 +223,15 @@ def grade_resolve_step1(action: Dict[str, Any], ticket: Dict[str, Any]) -> float
 
     pred_priority = (action.get("priority") or "").strip().lower()
     if pred_priority == ticket.get("gt_priority", ""):
-        score += 0.15
+        score += 0.12
     elif pred_priority in ticket.get("gt_priority_ok", []):
-        score += 0.07
+        score += 0.06
 
     pred_category = (action.get("category") or "").strip().lower()
     if pred_category == ticket.get("gt_category", ""):
-        score += 0.15
+        score += 0.13
     elif pred_category in ticket.get("gt_category_ok", []):
-        score += 0.07
+        score += 0.06
 
     pred_team = (action.get("team") or "").strip().lower()
     if pred_team == ticket.get("gt_team", ""):
@@ -286,21 +286,21 @@ def grade_crisis_ticket(action: Dict[str, Any], ticket: Dict[str, Any], step: in
 
     pred_priority = (action.get("priority") or "").strip().lower()
     if pred_priority == ticket.get("gt_priority", ""):
-        score += 0.03
+        score += 0.02
     elif pred_priority in ticket.get("gt_priority_ok", []):
-        score += 0.015
+        score += 0.01
 
     pred_category = (action.get("category") or "").strip().lower()
     if pred_category == ticket.get("gt_category", ""):
-        score += 0.03
+        score += 0.02
     elif pred_category in ticket.get("gt_category_ok", []):
-        score += 0.015
+        score += 0.01
 
     pred_team = (action.get("team") or "").strip().lower()
     if pred_team == ticket.get("gt_team", ""):
-        score += 0.04
+        score += 0.03
     elif pred_team in ticket.get("gt_team_ok", []):
-        score += 0.02
+        score += 0.015
 
     # Bonus for handling critical tickets first (steps 1-3)
     if step <= 3 and ticket.get("gt_priority", "") == "critical":
