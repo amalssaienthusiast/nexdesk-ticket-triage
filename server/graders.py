@@ -11,7 +11,7 @@ _EPS = 0.01  # minimum non-zero score / distance from 1.0 (must survive :.2f for
 
 def _strict(score: float) -> float:
     """Clamp score to strictly open interval (0, 1) — validator requirement."""
-    return round(max(_EPS, min(1.0 - _EPS, score)), 4)
+    return float(round(max(_EPS, min(1.0 - _EPS, float(score))), 4))
 
 
 # ─────────────────────────────────────────────
@@ -25,7 +25,7 @@ def _kw_score(text: str, keywords: List[str]) -> float:
         return _EPS
     text_lower = text.lower()
     hits = sum(1 for kw in keywords if kw.lower() in text_lower)
-    return min(hits / max(len(keywords) * 0.4, 1), 1.0 - _EPS)
+    return max(_EPS, min(hits / max(len(keywords) * 0.4, 1), 1.0 - _EPS))
 
 
 def _sla_score(predicted: Optional[int], expected: int) -> float:
@@ -52,14 +52,14 @@ def grade_classify(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
 
     # Priority score
     pred_priority = (action.get("priority") or "").strip().lower()
-    if pred_priority == ticket["gt_priority"]:
+    if pred_priority == ticket.get("gt_priority"):
         score += 0.5
     elif pred_priority in ticket.get("gt_priority_ok", []):
         score += 0.25
 
     # Category score
     pred_category = (action.get("category") or "").strip().lower()
-    if pred_category == ticket["gt_category"]:
+    if pred_category == ticket.get("gt_category"):
         score += 0.5
     elif pred_category in ticket.get("gt_category_ok", []):
         score += 0.25
@@ -79,19 +79,19 @@ def grade_route_step1(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
     score = _EPS
 
     pred_priority = (action.get("priority") or "").strip().lower()
-    if pred_priority == ticket["gt_priority"]:
+    if pred_priority == ticket.get("gt_priority"):
         score += 0.25
     elif pred_priority in ticket.get("gt_priority_ok", []):
         score += 0.12
 
     pred_category = (action.get("category") or "").strip().lower()
-    if pred_category == ticket["gt_category"]:
+    if pred_category == ticket.get("gt_category"):
         score += 0.25
     elif pred_category in ticket.get("gt_category_ok", []):
         score += 0.12
 
     pred_team = (action.get("team") or "").strip().lower()
-    if pred_team == ticket["gt_team"]:
+    if pred_team == ticket.get("gt_team"):
         score += 0.30
     elif pred_team in ticket.get("gt_team_ok", []):
         score += 0.15
@@ -123,19 +123,19 @@ def grade_resolve_step1(action: Dict[str, Any], ticket: Dict[str, Any]) -> float
     score = _EPS
 
     pred_priority = (action.get("priority") or "").strip().lower()
-    if pred_priority == ticket["gt_priority"]:
+    if pred_priority == ticket.get("gt_priority"):
         score += 0.15
     elif pred_priority in ticket.get("gt_priority_ok", []):
         score += 0.07
 
     pred_category = (action.get("category") or "").strip().lower()
-    if pred_category == ticket["gt_category"]:
+    if pred_category == ticket.get("gt_category"):
         score += 0.15
     elif pred_category in ticket.get("gt_category_ok", []):
         score += 0.07
 
     pred_team = (action.get("team") or "").strip().lower()
-    if pred_team == ticket["gt_team"]:
+    if pred_team == ticket.get("gt_team"):
         score += 0.10
     elif pred_team in ticket.get("gt_team_ok", []):
         score += 0.05

@@ -300,17 +300,17 @@ class NexDeskEnv:
                 # Simple grader for crisis_surge (priority + category + team)
                 score = _EPS
                 pred_priority = (action.get("priority") or "").strip().lower()
-                if pred_priority == ticket["gt_priority"]:
+                if pred_priority == ticket.get("gt_priority"):
                     score += 0.02
                 elif pred_priority in ticket.get("gt_priority_ok", []):
                     score += 0.01
                 pred_category = (action.get("category") or "").strip().lower()
-                if pred_category == ticket["gt_category"]:
+                if pred_category == ticket.get("gt_category"):
                     score += 0.02
                 elif pred_category in ticket.get("gt_category_ok", []):
                     score += 0.01
                 pred_team = (action.get("team") or "").strip().lower()
-                if pred_team == ticket["gt_team"]:
+                if pred_team == ticket.get("gt_team"):
                     score += 0.04
                 elif pred_team in ticket.get("gt_team_ok", []):
                     score += 0.02
