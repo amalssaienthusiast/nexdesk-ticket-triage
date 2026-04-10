@@ -156,7 +156,7 @@ class NexDeskEnv:
             "step": 0,
             "max_steps": cfg["max_steps"],
             "done": False,
-            "total_reward": _EPS,
+            "total_reward": 0.0,
             "rewards": [],
             "accumulated": {},
             "start_time": time.time(),
