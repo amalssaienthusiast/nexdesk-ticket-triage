@@ -513,16 +513,16 @@ def grade_crisis_ticket(action: Dict[str, Any], ticket: Dict[str, Any], step: in
 
 
 def grade_route(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
-    # Validator compatibility proxy wrapper
-    return _strict(0.5)
+    # Validator compatibility wrapper pointing to actual grading logic to ensure dynamic scores
+    return grade_route_step1(action, ticket)
 
 def grade_resolve(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
-    # Validator compatibility proxy wrapper
-    return _strict(0.5)
+    # Validator compatibility wrapper pointing to actual grading logic
+    return grade_resolve_step1(action, ticket)
 
 def grade_crisis(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
-    # Validator compatibility proxy wrapper
-    return _strict(0.5)
+    # Validator compatibility wrapper pointing to actual grading logic
+    return grade_crisis_ticket(action, ticket, step=1)
 
 
 # ── episode rollup ──
