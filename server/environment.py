@@ -212,12 +212,12 @@ class NexDeskEnv:
             )
         except Exception as e:
             logger.error(f"Time penalty error: {e}")
-            time_penalty = 0.0
+            time_penalty = _EPS
 
         # Apply confidence calibration bonus/penalty (advanced feature)
         confidence = action.get("confidence") if action else None
-        confidence_bonus = 0.0
-        normalized_accuracy = 0.0
+        confidence_bonus = _EPS
+        normalized_accuracy = _EPS
 
         if confidence is not None and isinstance(confidence, (int, float)):
             try:
@@ -228,13 +228,13 @@ class NexDeskEnv:
                 sess["accuracy_history"].append(normalized_accuracy)
             except Exception as e:
                 logger.error(f"Confidence bonus error: {e}")
-                confidence_bonus = 0.0
+                confidence_bonus = _EPS
 
         # Final reward calculation with penalties and bonuses
         reward = base_reward * (1.0 - time_penalty) + confidence_bonus
 
         # Track SLA breaches
-        sla_penalty = 0.0
+        sla_penalty = _EPS
         if elapsed_minutes > sess["sla_deadline_minutes"]:
             sess["sla_breaches"] += 1
             sla_penalty = 0.05 * sess["sla_breaches"]
