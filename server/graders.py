@@ -42,30 +42,30 @@ def _priority_score(predicted: str, ground_truth: str, acceptable: List[str]) ->
     # basic priority check
     pred = (predicted or "").strip().lower()
     if pred == ground_truth:
-        return 1.0
+        return 0.99
     if pred in acceptable:
         return 0.5
-    return 0.0
+    return _EPS
 
 
 def _category_score(predicted: str, ground_truth: str, acceptable: List[str]) -> float:
     # basic category check
     pred = (predicted or "").strip().lower()
     if pred == ground_truth:
-        return 1.0
+        return 0.99
     if pred in acceptable:
         return 0.5
-    return 0.0
+    return _EPS
 
 
 def _team_score(predicted: str, ground_truth: str, acceptable: List[str]) -> float:
     # basic team routing check
     pred = (predicted or "").strip().lower()
     if pred == ground_truth:
-        return 1.0
+        return 0.99
     if pred in acceptable:
         return 0.5
-    return 0.0
+    return _EPS
 
 
 # core time and confidence math
@@ -137,9 +137,9 @@ def get_score_breakdown(
     gt_system = ticket.get("gt_affected_system", "").lower()
     if pred_system:
         if gt_system and gt_system in pred_system:
-            breakdown["affected_system"] = 1.0
+            breakdown["affected_system"] = 0.99
         else:
-            breakdown["affected_system"] = 0.5
+            breakdown["affected_system"] = 0.25
 
     response = action.get("first_response") or ""
     if response and len(response) > 30:
