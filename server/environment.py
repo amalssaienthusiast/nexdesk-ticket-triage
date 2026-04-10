@@ -15,8 +15,8 @@ from .graders import (
     grade_resolve_step2,
     grade_resolve_step3,
     grade_crisis_ticket,
-    compute_confidence_bonus,
-    compute_time_penalty,
+    _compute_confidence_bonus,
+    _compute_time_penalty,
     get_score_breakdown,
 )
 from .tickets import TICKETS
@@ -207,7 +207,7 @@ class NexDeskEnv:
         # Apply time penalty (advanced feature)
         elapsed_minutes = (time.time() - sess["start_time"]) / 60.0
         try:
-            time_penalty = compute_time_penalty(
+            time_penalty = _compute_time_penalty(
                 elapsed_minutes, sess["sla_deadline_minutes"], sess["stress_level"]
             )
         except Exception as e:
@@ -223,7 +223,7 @@ class NexDeskEnv:
             try:
                 max_reward_for_step = cfg.get("max_reward_per_step", {}).get(step, 1.0)
                 normalized_accuracy = base_reward / max_reward_for_step if max_reward_for_step > 0 else 0.0
-                confidence_bonus = compute_confidence_bonus(confidence, normalized_accuracy)
+                confidence_bonus = _compute_confidence_bonus(confidence, normalized_accuracy)
                 sess["confidence_history"].append(float(confidence))
                 sess["accuracy_history"].append(normalized_accuracy)
             except Exception as e:

@@ -101,17 +101,17 @@ class BusinessMetrics:
             if stats["total_episodes"] > 0:
                 task_breakdown[task] = {
                     "episodes": stats["total_episodes"],
-                    "avg_score": round(stats["total_reward"] / stats["total_episodes"], 4),
+                    "avg_score": max(0.01, min(0.99, round(stats["total_reward"] / stats["total_episodes"], 4))),
                     "tickets_resolved": stats["total_tickets"],
                     "sla_breaches": stats["total_sla_breaches"],
-                    "avg_calibration": round(stats["calibration_sum"] / stats["total_episodes"], 4),
+                    "avg_calibration": max(0.01, min(0.99, round(stats["calibration_sum"] / stats["total_episodes"], 4))),
                 }
 
         return {
             "total_episodes": total_episodes,
             "total_tickets_processed": total_tickets,
-            "avg_episode_reward": round(avg_reward, 4),
-            "avg_confidence_calibration": round(avg_calibration, 4),
+            "avg_episode_reward": max(0.01, min(0.99, round(avg_reward, 4))),
+            "avg_confidence_calibration": max(0.01, min(0.99, round(avg_calibration, 4))),
             "automation_success_rate": max(0.01, min(0.99, round(automation_rate, 4))),
             "sla_compliance_rate": max(0.01, min(0.99, round(sla_compliance_rate, 4))),
             "total_sla_breaches": total_sla_breaches,

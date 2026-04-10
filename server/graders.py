@@ -72,7 +72,7 @@ def _team_score(predicted: str, ground_truth: str, acceptable: List[str]) -> flo
 # spent a while tuning these numbers to feel fair but punishing
 
 
-def compute_time_penalty(elapsed_minutes: float, sla_deadline: int, stress_level: float) -> float:
+def _compute_time_penalty(elapsed_minutes: float, sla_deadline: int, stress_level: float) -> float:
     # scales penalty based on how close we are to blowing the SLA deadline
     if sla_deadline <= 0:
         return _EPS
@@ -90,7 +90,7 @@ def compute_time_penalty(elapsed_minutes: float, sla_deadline: int, stress_level
     return min(base_penalty * stress_multiplier, 0.4)
 
 
-def compute_confidence_bonus(confidence: float, accuracy: float) -> float:
+def _compute_confidence_bonus(confidence: float, accuracy: float) -> float:
     # give them a bonus if they know they are right, punish if they are hopelessly overconfident
     if confidence is None:
         return _EPS
@@ -323,10 +323,10 @@ def grade_full_episode(
     total = sum(rewards)
 
     result = {
-        "total_score": round(total, 4),
+        "total_score": max(0.01, min(0.99, round(total, 4))),
         "step_rewards": [round(r, 4) for r in rewards],
         "num_steps": len(rewards),
-        "avg_step_reward": round(total / len(rewards), 4) if rewards else _EPS,
+        "avg_step_reward": max(0.01, min(0.99, round(total / len(rewards), 4))) if rewards else _EPS,
     }
 
     if metadata:
