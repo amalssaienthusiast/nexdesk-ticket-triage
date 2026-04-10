@@ -242,6 +242,12 @@ class NexDeskEnv:
 
         reward = _strict_clamp(reward)
 
+        # Absolute mathematical ceiling to prevent episodic sums from hitting 1.0
+        steps_remaining = sess["max_steps"] - step
+        max_allowed_reward = 0.99 - sess["total_reward"] - (steps_remaining * _EPS)
+        
+        reward = float(round(max(_EPS, min(reward, max_allowed_reward)), 2))
+
         sess["total_reward"] += reward
         sess["rewards"].append(reward)
 
