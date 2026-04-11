@@ -24,12 +24,12 @@ from .metrics import BusinessMetrics
 
 logger = logging.getLogger(__name__)
 
-_EPS = 0.01
+_EPS = 0.05
 
 
 def _strict_clamp(score: float) -> float:
     # strict bounding so the evaluator doesn't crash on us
-    return float(round(max(_EPS, min(0.99, float(score))), 2))
+    return float(round(max(_EPS, min(0.95, float(score))), 2))
 
 
 # basically the difficulty settings for the different tasks
@@ -40,7 +40,7 @@ TASK_CONFIGS = {
         "required_fields": ["priority", "category"],
         "difficulty": "easy",
         "base_sla_minutes": 60,
-        "max_reward_per_step": {1: 0.99},
+        "max_reward_per_step": {1: 0.95},
     },
     "ticket_route": {
         "max_steps": 2,
@@ -134,7 +134,7 @@ class NexDeskEnv:
             current_ticket = tickets[0]
 
         queue_depth = random.randint(5, 25)
-        stress_level = min(queue_depth / 30.0, 0.99)
+        stress_level = min(queue_depth / 30.0, 0.95)
 
         # Adjust SLA based on priority
         base_sla = cfg.get("base_sla_minutes", 60)
@@ -154,7 +154,7 @@ class NexDeskEnv:
             "step": 0,
             "max_steps": cfg["max_steps"],
             "done": False,
-            "total_reward": 0.01,
+            "total_reward": 0.05,
             "rewards": [],
             "accumulated": {},
             "start_time": time.time(),
@@ -244,7 +244,7 @@ class NexDeskEnv:
 
         # Absolute mathematical ceiling to prevent episodic sums from hitting 1.0
         steps_remaining = sess["max_steps"] - step
-        max_allowed_reward = 0.99 - sess["total_reward"] - (steps_remaining * _EPS)
+        max_allowed_reward = 0.95 - sess["total_reward"] - (steps_remaining * _EPS)
         
         reward = float(round(max(_EPS, min(reward, max_allowed_reward)), 2))
 
@@ -259,10 +259,10 @@ class NexDeskEnv:
             score_breakdown = {}
 
         score_breakdown.update({
-            "time_penalty": max(_EPS, min(0.99, round(time_penalty, 4))),
-            "confidence_bonus": max(_EPS, min(0.99, round(confidence_bonus, 4))),
-            "base_reward": max(_EPS, min(0.99, round(base_reward, 4))),
-            "sla_penalty": max(_EPS, min(0.99, round(sla_penalty, 4))),
+            "time_penalty": max(_EPS, min(0.95, round(time_penalty, 4))),
+            "confidence_bonus": max(_EPS, min(0.95, round(confidence_bonus, 4))),
+            "base_reward": max(_EPS, min(0.95, round(base_reward, 4))),
+            "sla_penalty": max(_EPS, min(0.95, round(sla_penalty, 4))),
             "sla_breaches": sess["sla_breaches"],
         })
 
@@ -277,7 +277,7 @@ class NexDeskEnv:
                 # Random new ticket arrival (30% chance)
                 if random.random() < 0.3:
                     sess["queue_depth"] += 1
-                    sess["stress_level"] = min(0.99, sess["stress_level"] + 0.05)
+                    sess["stress_level"] = min(0.95, sess["stress_level"] + 0.05)
             sess["tickets_resolved"] += 1
 
         done = step >= sess["max_steps"]
@@ -301,12 +301,12 @@ class NexDeskEnv:
             "done": done,
             "info": {
                 "step": step,
-                "total_reward": round(max(_EPS, min(0.99, sess["total_reward"])), 4),
+                "total_reward": round(max(_EPS, min(0.95, sess["total_reward"])), 4),
                 "task": task,
                 "score_breakdown": score_breakdown,
-                "time_penalty": max(_EPS, min(0.99, round(time_penalty, 4))),
-                "confidence_bonus": max(_EPS, min(0.99, round(confidence_bonus, 4))),
-                "sla_penalty": max(_EPS, min(0.99, round(sla_penalty, 4))),
+                "time_penalty": max(_EPS, min(0.95, round(time_penalty, 4))),
+                "confidence_bonus": max(_EPS, min(0.95, round(confidence_bonus, 4))),
+                "sla_penalty": max(_EPS, min(0.95, round(sla_penalty, 4))),
             },
         }
 
@@ -321,7 +321,7 @@ class NexDeskEnv:
             "step": sess["step"],
             "max_steps": sess["max_steps"],
             "done": sess["done"],
-            "total_reward": round(max(_EPS, min(0.99, sess["total_reward"])), 4),
+            "total_reward": round(max(_EPS, min(0.95, sess["total_reward"])), 4),
             "ticket_id": sess["ticket"]["id"],
             "sla_breaches": sess.get("sla_breaches", 0),
             "stress_level": round(sess.get("stress_level", _EPS), 2),
@@ -367,7 +367,7 @@ class NexDeskEnv:
             return 0.5  # neutral default
         try:
             mae = sum(abs(c - a) for c, a in zip(conf_hist, acc_hist)) / len(conf_hist)
-            return max(0.01, min(0.99, 1.0 - mae))
+            return max(0.05, min(0.95, 1.0 - mae))
         except Exception:
             return 0.5
 

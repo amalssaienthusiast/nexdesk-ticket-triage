@@ -9,12 +9,12 @@ from collections import Counter
 from collections.abc import Mapping
 from typing import Any, Dict, List, Optional
 
-_EPS = 0.01
+_EPS = 0.05
 
 
 def _strict(score: float) -> float:
     # never let it hit exactly 0.0 or 1.0 — validator gets weird about that
-    return float(round(max(_EPS, min(0.99, float(score))), 2))
+    return float(round(max(_EPS, min(0.95, float(score))), 2))
 
 
 def _safe_text(value: Any) -> str:
@@ -121,7 +121,7 @@ def _ngram_overlap(hypothesis: str, references: List[str], max_n: int = 3) -> fl
         return _EPS
 
     ref_combined = " ".join(references)
-    total = 0.01
+    total = 0.0
     count = 0
 
     for n in range(1, max_n + 1):
@@ -140,7 +140,7 @@ def _ngram_overlap(hypothesis: str, references: List[str], max_n: int = 3) -> fl
 
     if count == 0:
         return _EPS
-    return max(_EPS, min(total / count, 0.99))
+    return max(_EPS, min(total / count, 0.95))
 
 
 # ── response quality rubric ──
@@ -155,7 +155,7 @@ def _score_empathy(text: str) -> float:
     hits = sum(1 for m in markers if m in text.lower())
     if hits == 0:
         return 0.1
-    return min(hits / 3.0, 0.99)
+    return min(hits / 3.0, 0.95)
 
 
 def _score_clarity(text: str) -> float:
@@ -172,7 +172,7 @@ def _score_clarity(text: str) -> float:
     sentences = text.count(".") + text.count("!") + text.count("?")
     if sentences >= 2:
         score += 0.2
-    return min(score, 0.99)
+    return min(score, 0.95)
 
 
 def _score_actionability(text: str) -> float:
@@ -186,7 +186,7 @@ def _score_actionability(text: str) -> float:
     hits = sum(1 for m in markers if m in text.lower())
     if hits == 0:
         return 0.1
-    return min(hits / 4.0, 0.99)
+    return min(hits / 4.0, 0.95)
 
 
 def _response_quality(text: str) -> float:
@@ -218,7 +218,7 @@ def _kw_score(text: str, keywords: List[str]) -> float:
 
     raw = hits / max(len(keywords), 1)
     penalty = _detect_stuffing(text, keywords)
-    return max(_EPS, min(raw * penalty, 0.99))
+    return max(_EPS, min(raw * penalty, 0.95))
 
 
 # ── sla scoring ──
@@ -235,7 +235,7 @@ def _sla_score(predicted: Optional[int], expected: int) -> float:
         return 0.5
     ratio = predicted / expected
     if 0.8 <= ratio <= 1.2:
-        return 0.99
+        return 0.95
     if 0.5 <= ratio <= 2.0:
         return 0.7
     if 0.25 <= ratio <= 4.0:
@@ -250,7 +250,7 @@ def _priority_score(predicted: str, ground_truth: str, acceptable: List[str]) ->
     if not ground_truth:
         return _EPS
     if pred == ground_truth:
-        return 0.99
+        return 0.95
     if pred in acceptable:
         return 0.5
     return _EPS
@@ -261,7 +261,7 @@ def _category_score(predicted: str, ground_truth: str, acceptable: List[str]) ->
     if not ground_truth:
         return _EPS
     if pred == ground_truth:
-        return 0.99
+        return 0.95
     if pred in acceptable:
         return 0.5
     return _EPS
@@ -272,7 +272,7 @@ def _team_score(predicted: str, ground_truth: str, acceptable: List[str]) -> flo
     if not ground_truth:
         return _EPS
     if pred == ground_truth:
-        return 0.99
+        return 0.95
     if pred in acceptable:
         return 0.5
     return _EPS
@@ -336,7 +336,7 @@ def compute_ece(confidence_history: List[float], accuracy_history: List[float], 
         return 0.5
 
     bins = [i / n_bins for i in range(n_bins + 1)]
-    ece = 0.01
+    ece = 0.05
     total = len(confidence_history)
 
     for i in range(n_bins):
@@ -352,7 +352,7 @@ def compute_ece(confidence_history: List[float], accuracy_history: List[float], 
         avg_acc = sum(accuracy_history[j] for j in indices) / bsize
         ece += (bsize / total) * abs(avg_conf - avg_acc)
 
-    return max(0.01, min(0.99, ece))
+    return max(0.05, min(0.95, ece))
 
 
 # ── score breakdown for the info dict ──
@@ -380,7 +380,7 @@ def get_score_breakdown(
     gt_s = ticket.get("gt_affected_system", "").lower()
     if ps:
         if gt_s and (gt_s in ps or ps in gt_s):
-            bd["affected_system"] = 0.99
+            bd["affected_system"] = 0.95
         else:
             bd["affected_system"] = 0.15
 
@@ -531,7 +531,7 @@ def grade_resolve_step2(action: Dict[str, Any], ticket: Dict[str, Any]) -> float
         if len(resp) > 10:
             kw = _kw_score(resp, ticket.get("gt_keywords_response", []))
             rq = _response_quality(resp)
-            score += 0.20 * min(0.5 * kw + 0.5 * rq, 0.99)
+            score += 0.20 * min(0.5 * kw + 0.5 * rq, 0.95)
 
         return _strict(score)
     except Exception:
@@ -550,7 +550,7 @@ def grade_resolve_step3(action: Dict[str, Any], ticket: Dict[str, Any]) -> float
             kw = _kw_score(combined, ticket.get("gt_keywords_resolution", []))
             ng = _ngram_overlap(combined, ticket.get("gt_keywords_resolution", []))
             combined_score = 0.6 * kw + 0.4 * ng
-            score += 0.15 * min(combined_score * 1.5, 0.99)
+            score += 0.15 * min(combined_score * 1.5, 0.95)
         elif len(steps) == 1:
             score += 0.05
 
@@ -575,25 +575,25 @@ def grade_crisis_ticket(action: Dict[str, Any], ticket: Dict[str, Any], step: in
         if gt_p and pp == gt_p:
             score += 0.02
         elif gt_p and pp in ticket.get("gt_priority_ok", []):
-            score += 0.01
+            score += 0.05
 
         pc = _safe_text(action.get("category")).strip().lower()
         gt_c = ticket.get("gt_category", "")
         if gt_c and pc == gt_c:
             score += 0.02
         elif gt_c and pc in ticket.get("gt_category_ok", []):
-            score += 0.01
+            score += 0.05
 
         pt = _safe_text(action.get("team")).strip().lower()
         gt_t = ticket.get("gt_team", "")
         if gt_t and pt == gt_t:
             score += 0.03
         elif gt_t and pt in ticket.get("gt_team_ok", []):
-            score += 0.015
+            score += 0.05
 
         # bonus for getting critical stuff out of the way first
         if step <= 3 and gt_p == "critical":
-            score += 0.01
+            score += 0.05
         if 4 <= step <= 6 and gt_p == "high":
             score += 0.005
 
