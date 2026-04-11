@@ -1,8 +1,8 @@
 # nexdesk grading logic
-# tried to make this fair — exact match gets full credit, acceptable alternates get half
-# keyword scoring uses stemming so "connecting" matches "connection"
-# added anti-stuffing so you can't just dump keywords in a list
-# response quality uses a rubric (empathy + clarity + actionability)
+# exact matches get the highest score, acceptable alternates get partial credit
+# keyword scoring uses simple stemming so "connecting" matches "connection"
+# anti-stuffing reduces rewards for keyword dumps with poor sentence structure
+# response quality uses a small rubric (empathy + clarity + actionability)
 
 import re
 from collections import Counter
@@ -512,21 +512,41 @@ def grade_crisis_ticket(action: Dict[str, Any], ticket: Dict[str, Any], step: in
     return _strict(score)
 
 
-def _hash_dynamic_score(action: Dict[str, Any]) -> float:
-    # return a varying score based on hash of input to safely bypass fuzz filters!
-    import hashlib
-    hash_val = float(int(hashlib.md5(str(action).encode()).hexdigest(), 16) % 90) / 100.0
-    return max(0.01, min(0.99, hash_val + 0.05))
-
 def grade_route(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
-    # Validator compatibility wrapper pointing to dynamic hashing to ensure variance under fuzzing
-    return _hash_dynamic_score(action)
+    """
+    Single-call compatibility grader for the route task.
+
+    This mirrors the environment's 2-step task by combining the route step
+    and affected-system step into one deterministic score.
+    """
+    step1 = grade_route_step1(action, ticket)
+    step2 = grade_route_step2(action, ticket)
+    return _strict(0.84 * step1 + 0.16 * (step2 / 0.15))
 
 def grade_resolve(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
-    return _hash_dynamic_score(action)
+    """
+    Single-call compatibility grader for the resolve task.
+
+    This combines the three environment steps into one deterministic score
+    using the same rough weighting as the step-level rewards.
+    """
+    step1 = grade_resolve_step1(action, ticket)
+    step2 = grade_resolve_step2(action, ticket)
+    step3 = grade_resolve_step3(action, ticket)
+    return _strict(
+        0.42 * (step1 / 0.40) +
+        0.32 * (step2 / 0.30) +
+        0.26 * (step3 / 0.25)
+    )
 
 def grade_crisis(action: Dict[str, Any], ticket: Dict[str, Any]) -> float:
-    return _hash_dynamic_score(action)
+    """
+    Single-call compatibility grader for the crisis task.
+
+    Uses the per-ticket crisis grader at the first step so the standalone
+    task-level grader stays deterministic and aligned with runtime behavior.
+    """
+    return grade_crisis_ticket(action, ticket, step=1)
 
 
 # ── episode rollup ──

@@ -3,7 +3,7 @@ NexDesk Pydantic Models
 Typed models for Action, Observation, and State used by the OpenEnv client.
 """
 
-from typing import List, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -14,38 +14,40 @@ class NexDeskAction(BaseModel):
     session_id: str = Field(..., description="Session ID from reset")
 
     # Classification fields
-    priority: Optional[str] = Field(
+    priority: Optional[Literal["low", "medium", "high", "critical"]] = Field(
         None, description="Ticket priority: low, medium, high, critical"
     )
-    category: Optional[str] = Field(
+    category: Optional[Literal["network", "hardware", "software", "access", "security", "other"]] = Field(
         None,
         description="Ticket category: network, hardware, software, access, security, other",
     )
 
     # Routing fields
-    team: Optional[str] = Field(
+    team: Optional[Literal["helpdesk", "network-ops", "sysadmin", "security", "dev"]] = Field(
         None,
         description="Assigned team: helpdesk, network-ops, sysadmin, security, dev",
     )
-    affected_system: Optional[str] = Field(None, description="Primary system affected by the issue")
+    affected_system: Optional[str] = Field(
+        None, description="Primary system affected by the issue", min_length=1
+    )
 
     # Resolution fields
     first_response: Optional[str] = Field(
-        None, description="Professional first response to the user"
+        None, description="Professional first response to the user", min_length=1
     )
     resolution_steps: Optional[List[str]] = Field(None, description="List of resolution steps")
-    sla_hours: Optional[int] = Field(None, description="Estimated hours to resolve")
+    sla_hours: Optional[int] = Field(None, description="Estimated hours to resolve", ge=0, le=168)
 
     # Innovation: Confidence calibration
     confidence: Optional[float] = Field(
-        None, description="Agent's confidence in this action (0.0-1.0)"
+        None, description="Agent's confidence in this action (0.0-1.0)", ge=0.0, le=1.0
     )
 
     # Innovation: Action type for multi-agent scenarios
-    action_type: Optional[str] = Field(
+    action_type: Optional[Literal["classify", "respond", "resolve", "delegate", "escalate"]] = Field(
         None, description="Action type: classify, respond, resolve, delegate, escalate"
     )
-    reasoning: Optional[str] = Field(None, description="Optional reasoning for the action")
+    reasoning: Optional[str] = Field(None, description="Optional reasoning for the action", min_length=1)
 
 
 class NexDeskObservation(BaseModel):
@@ -88,6 +90,12 @@ class NexDeskObservation(BaseModel):
     similar_tickets: Optional[List[dict]] = Field(
         None, description="Similar historical tickets for pattern matching"
     )
+    knowledge_hints: Optional[Dict[str, List[str]]] = Field(
+        None, description="Domain hints that may help the agent troubleshoot faster"
+    )
+    batch_info: Optional[dict] = Field(
+        None, description="Additional batch-processing details for crisis mode"
+    )
 
 
 class NexDeskState(BaseModel):
@@ -100,6 +108,8 @@ class NexDeskState(BaseModel):
     done: bool
     total_reward: float
     ticket_id: str
+    sla_breaches: Optional[int] = Field(default=None)
+    stress_level: Optional[float] = Field(default=None)
 
     # Innovation: Performance tracking
     confidence_history: Optional[List[float]] = Field(
@@ -121,6 +131,7 @@ class NexDeskInfo(BaseModel):
     confidence_bonus: Optional[float] = Field(
         None, description="Bonus/penalty for confidence calibration"
     )
+    sla_penalty: Optional[float] = Field(None, description="Penalty applied after SLA breach")
 
 
 class StepResult(BaseModel):

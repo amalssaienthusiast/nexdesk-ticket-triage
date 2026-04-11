@@ -2,7 +2,7 @@
 
 import logging
 import traceback
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -70,22 +70,26 @@ class ResetRequest(BaseModel):
 
 class StepRequest(BaseModel):
     session_id: str = Field(..., description="Session ID from reset", min_length=1)
-    priority: Optional[str] = Field(None, description="low, medium, high, critical")
-    category: Optional[str] = Field(
+    priority: Optional[Literal["low", "medium", "high", "critical"]] = Field(
+        None, description="low, medium, high, critical"
+    )
+    category: Optional[Literal["network", "hardware", "software", "access", "security", "other"]] = Field(
         None, description="network, hardware, software, access, security, other"
     )
-    team: Optional[str] = Field(None, description="helpdesk, network-ops, sysadmin, security, dev")
-    affected_system: Optional[str] = Field(None, description="Primary affected system")
-    first_response: Optional[str] = Field(None, description="First response to user")
+    team: Optional[Literal["helpdesk", "network-ops", "sysadmin", "security", "dev"]] = Field(
+        None, description="helpdesk, network-ops, sysadmin, security, dev"
+    )
+    affected_system: Optional[str] = Field(None, description="Primary affected system", min_length=1)
+    first_response: Optional[str] = Field(None, description="First response to user", min_length=1)
     resolution_steps: Optional[List[str]] = Field(None, description="List of resolution steps")
     sla_hours: Optional[int] = Field(None, description="Estimated hours to resolve", ge=0, le=168)
     confidence: Optional[float] = Field(
-        None, description="Agent's confidence (0.0-1.0)"
+        None, description="Agent's confidence (0.0-1.0)", ge=0.0, le=1.0
     )
-    action_type: Optional[str] = Field(
+    action_type: Optional[Literal["classify", "respond", "resolve", "delegate", "escalate"]] = Field(
         None, description="classify, respond, resolve, delegate, escalate"
     )
-    reasoning: Optional[str] = Field(None, description="Optional reasoning")
+    reasoning: Optional[str] = Field(None, description="Optional reasoning", min_length=1)
 
 
 @app.get("/health")

@@ -304,7 +304,9 @@ class NexDeskEnv:
                 "total_reward": round(max(_EPS, min(0.99, sess["total_reward"])), 4),
                 "task": task,
                 "score_breakdown": score_breakdown,
+                "time_penalty": max(_EPS, min(0.99, round(time_penalty, 4))),
                 "confidence_bonus": max(_EPS, min(0.99, round(confidence_bonus, 4))),
+                "sla_penalty": max(_EPS, min(0.99, round(sla_penalty, 4))),
             },
         }
 
@@ -323,6 +325,8 @@ class NexDeskEnv:
             "ticket_id": sess["ticket"]["id"],
             "sla_breaches": sess.get("sla_breaches", 0),
             "stress_level": round(sess.get("stress_level", _EPS), 2),
+            "confidence_history": sess.get("confidence_history", []),
+            "accuracy_history": sess.get("accuracy_history", []),
         }
 
     def get_metrics(self) -> Dict[str, Any]:
@@ -402,6 +406,7 @@ class NexDeskEnv:
             "stress_level": round(sess["stress_level"], 2),
             "org_context": ORG_CONTEXT,
             "similar_tickets": self._find_similar_tickets(ticket),
+            "knowledge_hints": self._build_knowledge_hints(ticket),
         }
 
         if cfg.get("is_batch"):
@@ -435,6 +440,22 @@ class NexDeskEnv:
             ]
         except Exception:
             return []
+
+    def _build_knowledge_hints(self, ticket: Dict[str, Any]) -> Dict[str, List[str]]:
+        """Provide lightweight troubleshooting hints derived from the ticket metadata."""
+        category = ticket.get("gt_category", "other")
+        hints = {
+            "network": ["Check connectivity scope", "Review router/switch status", "Inspect VPN or DHCP logs"],
+            "hardware": ["Verify power and cabling", "Check device health LEDs", "Confirm replacement inventory"],
+            "software": ["Review recent updates", "Inspect application logs", "Test with a known-good profile"],
+            "access": ["Verify identity and group membership", "Check MFA/auth provider status", "Review recent permission changes"],
+            "security": ["Preserve logs", "Contain affected accounts or hosts", "Escalate to incident response if impact is broad"],
+            "other": ["Clarify symptoms", "Confirm affected users and systems", "Gather recent changes"],
+        }
+        return {
+            "common_causes": ticket.get("gt_keywords_resolution", [])[:4],
+            "recommended_checks": hints.get(category, hints["other"]),
+        }
 
     def _cleanup_expired_sessions(self) -> None:
         # clear out old sessions so memory doesn't explode
